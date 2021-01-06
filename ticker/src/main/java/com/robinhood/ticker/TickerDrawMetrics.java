@@ -35,6 +35,7 @@ class TickerDrawMetrics {
     // canvas. These attributes are reset whenever anything on the text paint changes.
     private final Map<Character, Float> charWidths = new HashMap<>(256);
     private float charHeight, charBaseline;
+    private float fixedColumnWidth = -1f;
 
     private TickerView.ScrollingDirection preferredScrollingDirection = TickerView.ScrollingDirection.ANY;
 
@@ -60,10 +61,20 @@ class TickerDrawMetrics {
         if (value != null) {
             return value;
         } else {
-            final float width = textPaint.measureText(Character.toString(character));
+//            final float width = textPaint.measureText(Character.toString(character));
+            final float width;
+            if (fixedColumnWidth == -1) {
+                width = textPaint.measureText(Character.toString(character));
+            } else {
+                width = fixedColumnWidth;
+            }
             charWidths.put(character, width);
             return width;
         }
+    }
+
+    public void setFixedColumnWidth(float fixedColumnWidth) {
+        this.fixedColumnWidth = fixedColumnWidth;
     }
 
     float getCharHeight() {

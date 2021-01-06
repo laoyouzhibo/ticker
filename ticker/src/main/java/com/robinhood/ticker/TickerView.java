@@ -39,6 +39,11 @@ import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 
+import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
+
+import java.lang.annotation.ElementType;
+
 /**
  * The primary view for showing a ticker text view that handles smoothly scrolling from the
  * current text to a given text. The scrolling behavior is defined by
@@ -90,6 +95,7 @@ public class TickerView extends View {
     private int textStyle;
     private long animationDelayInMillis;
     private long animationDurationInMillis;
+    private float fixedColumnWidth;
     private Interpolator animationInterpolator;
     private boolean animateMeasurementChange;
     // pending text set from XML because we didn't have a character list initially
@@ -143,12 +149,12 @@ public class TickerView extends View {
         if (textAppearanceResId != -1) {
             final TypedArray textAppearanceArr = context.obtainStyledAttributes(
                     textAppearanceResId, R.styleable.TickerView);
-            styledAttributes.applyTypedArray(textAppearanceArr);
+            styledAttributes.applyTypedArray(context, textAppearanceArr);
             textAppearanceArr.recycle();
         }
 
         // Custom set attributes on the view should override textAppearance if applicable.
-        styledAttributes.applyTypedArray(arr);
+        styledAttributes.applyTypedArray(context, arr);
 
         // After we've fetched the correct values for the attributes, set them on the view
         animationInterpolator = DEFAULT_ANIMATION_INTERPOLATOR;
@@ -156,6 +162,8 @@ public class TickerView extends View {
                 R.styleable.TickerView_ticker_animationDuration, DEFAULT_ANIMATION_DURATION);
         this.animateMeasurementChange = arr.getBoolean(
                 R.styleable.TickerView_ticker_animateMeasurementChange, false);
+        this.fixedColumnWidth = arr.getDimension(R.styleable.TickerView_ticker_fixedColumnWidth, -1);
+        metrics.setFixedColumnWidth(fixedColumnWidth);
         this.gravity = styledAttributes.gravity;
 
         if (styledAttributes.shadowColor != 0) {
@@ -250,7 +258,7 @@ public class TickerView extends View {
             gravity = DEFAULT_GRAVITY;
         }
 
-        void applyTypedArray(TypedArray arr) {
+        void applyTypedArray(Context context, TypedArray arr) {
             gravity = arr.getInt(R.styleable.TickerView_android_gravity, gravity);
             shadowColor = arr.getColor(R.styleable.TickerView_android_shadowColor,
                     shadowColor);
@@ -414,6 +422,7 @@ public class TickerView extends View {
      *
      * @param typeface the typeface to use on the text.
      */
+
     public void setTypeface(Typeface typeface) {
         if (textStyle == Typeface.BOLD_ITALIC) {
             typeface = Typeface.create(typeface, Typeface.BOLD_ITALIC);
@@ -421,6 +430,30 @@ public class TickerView extends View {
             typeface = Typeface.create(typeface, Typeface.BOLD);
         } else if (textStyle == Typeface.ITALIC) {
             typeface = Typeface.create(typeface, Typeface.ITALIC);
+        }
+
+        textPaint.setTypeface(typeface);
+        onTextPaintMeasurementChanged();
+    }
+
+    public void setTextStyle(int textStyle, Typeface font) {
+        if (textStyle == 0 && font == null) return;
+
+        Typeface typeface;
+        if (font == null) {
+            typeface = textPaint.getTypeface();
+        } else {
+            typeface = font;
+        }
+
+        if (textStyle != 0) {
+            if (textStyle == Typeface.BOLD_ITALIC) {
+                typeface = Typeface.create(typeface, Typeface.BOLD_ITALIC);
+            } else if (textStyle == Typeface.BOLD) {
+                typeface = Typeface.create(typeface, Typeface.BOLD);
+            } else if (textStyle == Typeface.ITALIC) {
+                typeface = Typeface.create(typeface, Typeface.ITALIC);
+            }
         }
 
         textPaint.setTypeface(typeface);
